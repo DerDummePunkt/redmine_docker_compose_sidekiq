@@ -16,10 +16,11 @@ networks:
 x-redmine-sidekiq-common: &redmine-sidekiq-common
     build:
       context: ./
-      # dockerfile: Dockerfile.debian.sidekiq.oidc
       dockerfile: Dockerfile.debian.sidekiq
+      # dockerfile: Dockerfile.debian.sidekiq.oidc
       tags:
-         - "redmine:6-bookworm-oidc-sidekiq"
+         - "redmine:6-bookworm-sidekiq"
+        #  - "redmine:6-bookworm-sidekiq-oidc"
     restart: unless-stopped
     ports:
       - 3000
