@@ -1,0 +1,87 @@
+---
+secrets:
+  DB_PASSWORD:
+    file: './secrets/DB_PASSWORD'
+  # unused, see https://github.com/docker-library/redmine/issues/349
+  # SECRET_KEY_BASE:
+  #   file: './secrets/SECRET_KEY_BASE'
+  REDIS_PASSWORD:
+    file: './secrets/REDIS_PASSWORD'
+
+networks:
+  backend:
+  web:
+    external: true
+
+x-redmine-sidekiq-common: &redmine-sidekiq-common
+    build:
+      context: ./
+      # dockerfile: Dockerfile.debian.sidekiq.oidc
+      dockerfile: Dockerfile.debian.sidekiq
+      tags:
+         - "redmine:6-bookworm-oidc-sidekiq"
+    restart: unless-stopped
+    ports:
+      - 3000
+    volumes:
+      - ./app_data:/usr/src/redmine/files
+    secrets:
+      - DB_PASSWORD
+      - REDIS_PASSWORD
+    environment:
+      REDMINE_DB_POSTGRES: db
+      REDMINE_DB_USERNAME: redmine
+      REDMINE_DB_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+      REDMINE_REDIS_PASSWORD_FILE: /run/secrets/REDIS_PASSWORD
+
+services:
+  redmine:
+    container_name: redmine
+    <<: *redmine-sidekiq-common
+    networks:
+      - backend
+      - web
+
+  sidekiq:
+    <<: *redmine-sidekiq-common
+    networks:
+      - backend
+    command: ["bundle", "exec", "sidekiq"]
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    networks:
+      - backend
+    stop_grace_period: "3s"
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
+    secrets:
+      - DB_PASSWORD
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+      POSTGRES_DB: redmine
+      POSTGRES_USER: redmine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: 'unless-stopped'
+    networks:
+      - backend
+    volumes:
+      - "./valkey_data:/data"
+    secrets: ['REDIS_PASSWORD']
+    command: ["sh", "-c", "redis-server --requirepass $(cat /run/secrets/REDIS_PASSWORD)"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $(cat /run/secrets/REDIS_PASSWORD) ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
+...

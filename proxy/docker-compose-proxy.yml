@@ -1,0 +1,31 @@
+---
+networks:
+  default:
+  web:
+    external: true
+    name: web
+
+services:
+  proxy:
+    image: nginx:alpine
+    container_name: proxy
+    ports:
+      - 80:80
+      - 443:443
+    restart: unless-stopped
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./dhparam.pem:/dhparam.pem
+      - ./certs/mydomain.com.crt:/certs/mydomain.com.crt:ro
+      - ./certs/mydomain.key:/certs/mydomain.com.key:ro
+      - ./conf.d:/etc/nginx/conf.d
+    networks:
+      - default
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "wget -O /dev/null http://localhost/status/alive || exit 1"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+
+...
