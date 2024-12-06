@@ -1,6 +1,7 @@
 # redmine_docker_compose_sidekiq
 
 This repo is meant to showcase proposed changes to https://github.com/docker-library/redmine/ as well as provide an example on how to use the proposed changes in a docker compose context.
+See https://github.com/docker-library/redmine/issues/316 for details.
 
 The compose stack runs the same image as two services:
 - one running the ruby on rails redmine application
@@ -33,6 +34,7 @@ The values are mapped and used in the respective services accordingly.
     ```bash
     docker compose up -d
     ```
+    - this is going to take a while on first run, as the iamge has to be build first
 - watch the logs
     ```bash
     docker compose logs -f --tail=100
