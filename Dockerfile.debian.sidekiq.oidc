@@ -1,3 +1,9 @@
+#
+# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
+#
+# PLEASE DO NOT EDIT IT DIRECTLY.
+#
+
 FROM ruby:3.3-slim-bookworm
 
 # explicitly set uid/gid to guarantee that it won't change in the future
@@ -123,14 +129,11 @@ RUN set -eux; \
 	done; \
 # nokogiri's vendored libxml2 + libxslt do not build on mips64le, so use the apt packages when building
 	gosu redmine bundle config build.nokogiri --use-system-libraries; \
+# start testing changes for sidekiq
+	gosu redmine echo "gem 'sidekiq'" >> Gemfile; \
+# end testing changes for sidekiq
 	gosu redmine bundle install --jobs "$(nproc)"; \
 	rm ./config/database.yml; \
-# testing changes for sidekiq
-	touch Gemfile.local; \
-	echo "gem 'sidekiq'" >> Gemfile.local; \
-	bundle install; \
-# should this be done in the entrypoint after checking if an env var for REDIS is present?
-	# echo "config.active_job.queue_adapter = :sidekiq" >> ./config/additional_environment.rb; \
 # fix permissions for running as an arbitrary user
 	chmod -R ugo=rwX Gemfile.lock "$GEM_HOME"; \
 	rm -rf ~redmine/.bundle; \
@@ -155,6 +158,7 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 3000
 CMD ["rails", "server", "-b", "0.0.0.0"]
+
 
 USER root
 
