@@ -47,7 +47,7 @@ services:
     <<: *redmine-sidekiq-common
     networks:
       - backend
-    command: ["bundle", "exec", "sidekiq"]
+    command: ["bundle", "exec", "sidekiq", "-q", "mailers"]
 
   db:
     image: postgres:17-alpine

@@ -29,6 +29,12 @@ case "$1" in
 	rails | rake ) isLikelyRedmine=1 ;;
 esac
 
+isLikelySidekiq=
+case "$*" in
+	bundle\ exec\ sidekiq* ) isLikelySidekiq=1 ;;
+esac
+
+
 _fix_permissions() {
 	# https://www.redmine.org/projects/redmine/wiki/RedmineInstall#Step-8-File-system-permissions
 	local dirs=( config log public/plugin_assets tmp ) args=()
@@ -200,7 +206,7 @@ if [ -n "$isLikelyRedmine" ] && [ "$(id -u)" = '0' ]; then
 	exec gosu redmine "$BASH_SOURCE" "$@"
 fi
 
-if [ -n "$isLikelyRedmine" ] || [ "$*" == "bundle exec sidekiq" ]; then
+if [ -n "$isLikelyRedmine" ] || [ -n "$isLikelySidekiq" ]; then
 	_fix_permissions
 
 	_configure_sql_database_connection
