@@ -19,8 +19,8 @@ x-redmine-sidekiq-common: &redmine-sidekiq-common
       dockerfile: Dockerfile.debian.sidekiq
       # dockerfile: Dockerfile.debian.sidekiq.oidc
       tags:
-         - "redmine:6-bookworm-sidekiq"
-        #  - "redmine:6-bookworm-sidekiq-oidc"
+         - "redmine:6-trixie-sidekiq"
+        #  - "redmine:6-trixie-sidekiq-oidc"
     restart: unless-stopped
     ports:
       - 3000
