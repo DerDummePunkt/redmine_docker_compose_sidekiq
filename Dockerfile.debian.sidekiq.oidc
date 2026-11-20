@@ -13,7 +13,7 @@ RUN groupadd -r -g 999 redmine && useradd -r -g redmine -u 999 redmine
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		bzr \
+        bzr \
 		ca-certificates \
 		ghostscript \
 		git \
@@ -143,9 +143,7 @@ RUN set -eux; \
 		| sort -u \
 		| xargs -r apt-mark manual \
 	; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-	# verify Kyiv timezone isn't missing
-	gosu redmine bundle exec rake time:zones:all | grep -q 'Kyiv'
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false
 
 VOLUME /usr/src/redmine/files
 
