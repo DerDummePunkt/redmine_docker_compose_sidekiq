@@ -162,7 +162,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PLUGIN_VERSION 4.2.4
+ENV PLUGIN_VERSION 3.0.9
 RUN wget -O oauth_plugin.tar.gz https://github.com/kontron/redmine_oauth/archive/refs/tags/v${PLUGIN_VERSION}.tar.gz
 
 RUN tar -xf oauth_plugin.tar.gz
