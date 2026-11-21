@@ -80,5 +80,24 @@ The redmine instance is assumed to be run under the subdomain `redmine.`, you ca
     docker compose logs -f --tail=100
     ```
 
-## the two docker files
-The Dockerfile used by default is `Dockerfile.debian.sidekiq`, there is also `Dockerfile.debian.sidekiq.oidc` which addionally integrates aplugin for OIDC/OAuth, see https://github.com/kontron/redmine_oauth/
+## the Dockerfile
+The `Dockerfile` builds on top of the official `redmine` image and adds the `sidekiq` gem and `additional_environment.rb`. The entrypoint of the official image is used unchanged.
+
+`additional_environment.rb` enables the sidekiq queue adapter and configures the redis/valkey connection, analogous to the `REDMINE_DB_*` variables of the database connection:
+
+| variable | default |
+| --- | --- |
+| `REDMINE_REDIS_HOST` | `redis` |
+| `REDMINE_REDIS_PORT` | `6379` |
+| `REDMINE_REDIS_DB` | `0` |
+| `REDMINE_REDIS_USERNAME` | none |
+| `REDMINE_REDIS_PASSWORD` | none |
+
+Each of them also supports a `_FILE` variant (e.g. `REDMINE_REDIS_PASSWORD_FILE`) for docker secrets, setting both is an error. The password is passed to sidekiq as a separate setting, not as part of a `REDIS_URL`, so it can contain any character.
+
+It optionally integrates a plugin for OIDC/OAuth, see https://github.com/kontron/redmine_oauth/. The compose file enables it by default (version `3.0.9`).
+To build without it, set the build argument to an empty value:
+```bash
+OAUTH_PLUGIN_VERSION= docker compose build
+```
+To use another plugin version, set `OAUTH_PLUGIN_VERSION=<version>`. The redmine base image can be changed with the `REDMINE_TAG` build argument.

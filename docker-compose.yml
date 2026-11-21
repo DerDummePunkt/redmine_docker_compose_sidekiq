@@ -13,14 +13,21 @@ networks:
   web:
     external: true
 
+x-redmine-environment: &redmine-environment
+  REDMINE_DB_POSTGRES: db
+  REDMINE_DB_USERNAME: redmine
+  REDMINE_DB_PASSWORD_FILE: /run/secrets/DB_PASSWORD
+  REDMINE_REDIS_HOST: valkey
+  REDMINE_REDIS_PASSWORD_FILE: /run/secrets/REDIS_PASSWORD
+
 x-redmine-sidekiq-common: &redmine-sidekiq-common
     build:
       context: ./
-      # dockerfile: Dockerfile.debian.sidekiq
-      dockerfile: Dockerfile.debian.sidekiq.oidc
+      args:
+        # set to an empty value (OAUTH_PLUGIN_VERSION=) to build without the OIDC/OAuth plugin
+        OAUTH_PLUGIN_VERSION: ${OAUTH_PLUGIN_VERSION-3.0.9}
       tags:
-         # - "redmine:6-trixie-sidekiq"
-         - "redmine:6-trixie-sidekiq-oidc"
+        - "redmine:6-trixie-sidekiq"
     restart: unless-stopped
     ports:
       - 3000
@@ -29,11 +36,7 @@ x-redmine-sidekiq-common: &redmine-sidekiq-common
     secrets:
       - DB_PASSWORD
       - REDIS_PASSWORD
-    environment:
-      REDMINE_DB_POSTGRES: db
-      REDMINE_DB_USERNAME: redmine
-      REDMINE_DB_PASSWORD_FILE: /run/secrets/DB_PASSWORD
-      REDMINE_REDIS_PASSWORD_FILE: /run/secrets/REDIS_PASSWORD
+    environment: *redmine-environment
 
 services:
   redmine:
@@ -47,6 +50,10 @@ services:
     <<: *redmine-sidekiq-common
     networks:
       - backend
+    environment:
+      <<: *redmine-environment
+      # the redmine service owns the migrations, avoids both containers migrating at once
+      REDMINE_NO_DB_MIGRATE: "1"
     command: ["bundle", "exec", "sidekiq", "-q", "mailers"]
 
   db:
@@ -78,9 +85,9 @@ services:
     volumes:
       - "./valkey_data:/data"
     secrets: ['REDIS_PASSWORD']
-    command: ["sh", "-c", "redis-server --requirepass $(cat /run/secrets/REDIS_PASSWORD)"]
+    command: ["sh", "-c", 'exec redis-server --requirepass "$(cat /run/secrets/REDIS_PASSWORD)"']
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $(cat /run/secrets/REDIS_PASSWORD) ping | grep PONG"]
+      test: ["CMD-SHELL", 'redis-cli -a "$(cat /run/secrets/REDIS_PASSWORD)" ping | grep PONG']
       interval: 1s
       timeout: 3s
       retries: 5
